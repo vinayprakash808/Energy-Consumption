@@ -1,0 +1,43 @@
+library(shiny)
+
+ui <- fluidPage(
+  tabsetPanel(tabPanel("Month",titlePanel(h4("Trend of", span("Energy",style="color:red"), "Consumption",align="center")),
+                       sidebarLayout(
+                         sidebarPanel(selectInput("trend",h5("Trend",style="color:red"),choices = c("","Plot Trend"),width = 120),br(),
+                                      uiOutput("day"),width = 2),
+                         mainPanel(plotOutput("graph",width = 900),plotOutput("graph1"))
+                       )
+  )))
+
+server <- function(input, output, session) {
+  graph <- reactive({
+    if(input$trend == "Plot Trend"){
+      ggplot(data=Monthly_Energy.Daily_Energy_Consumption_Report.Area_APC,aes(Area_Name))+geom_line(aes(y=CHP, colour = "CHP"))+geom_line(aes(y=AHP, colour = "AHP"))+geom_line(aes(y=OLC, colour = "OLC"))+ylab("Energy Consumption")
+    }
+  })
+  output$graph <- renderPlot(
+    {
+      graph()
+    }
+  )
+  selectedData <- reactive({
+    Monthly_Energy.Daily_Energy_Consumption_Report.Area_APC[Monthly_Energy.Daily_Energy_Consumption_Report.Area_APC$Day %in% input$day,]
+  })
+  graph1 <- reactive({
+    if (input$day == Monthly_Energy.Daily_Energy_Consumption_Report.Area_APC$Day) {
+      ggplot(data=selectedData(),aes(Area_Name))+geom_line(aes(y=CHP, colour = "CHP"))+geom_line(aes(y=AHP, colour = "AHP"))+geom_line(aes(y=OLC, colour = "OLC"))+ylab("Energy Consumption")
+    }
+  })
+  output$graph1 <- renderPlot(
+    {
+      graph1()
+    }
+  )
+  output$day <- renderUI({
+    selectInput("day", "Day",
+                choices = c("All",levels(Monthly_Energy.Daily_Energy_Consumption_Report.Area_APC$Day)), multiple = TRUE,selected = "All")
+  })
+}
+
+
+shinyApp(ui, server)
